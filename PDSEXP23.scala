@@ -1,75 +1,60 @@
 
-import org.knowm.xchart.CategoryChartBuilder
-import org.knowm.xchart.CategorySeries
-import scala.jdk.CollectionConverters._
+import vegas._
+import vegas.render.WindowRenderer._
 
 object FruitPriceAnalysis {
+
   def main(args: Array[String]): Unit = {
 
-    // Create the fruit dataset
-    val dates = List(
-      "2026-01-01",
-      "2026-01-02",
-      "2026-01-03",
-      "2026-01-04",
-      "2026-01-05"
+    // Step 1: Create the original fruit dataset
+    val fruitData = Seq(
+      Map("Date" -> "2026-01-01", "Fruit" -> "Apple", "Price" -> 120),
+      Map("Date" -> "2026-01-02", "Fruit" -> "Banana", "Price" -> 60),
+      Map("Date" -> "2026-01-03", "Fruit" -> "Apple", "Price" -> 130),
+      Map("Date" -> "2026-01-04", "Fruit" -> "Orange", "Price" -> 80),
+      Map("Date" -> "2026-01-05", "Fruit" -> "Apple", "Price" -> 125)
     )
 
-    val fruits = List("Apple", "Banana", "Apple", "Orange", "Apple")
-    val prices = List(120.0, 60.0, 130.0, 80.0, 125.0)
-    val quantities = List(10, 15, 8, 12, 20)
-
-    // Combine the data into records
-    val fruitData = dates.indices.map { i =>
-      (dates(i), fruits(i), prices(i), quantities(i))
-    }
-
-    // Display the original dataset
+    // Step 2: Display the original fruit dataset
     println("Original Fruit Dataset:")
-    println("Date       Fruit    Price    Quantity")
+    fruitData.foreach(println)
 
-    fruitData.foreach { case (date, fruit, price, quantity) =>
-      println(f"$date%-12s $fruit%-8s $price%7.2f $quantity%10d")
-    }
+    // Step 3: Filter the dataset to select only Apple records
+    val appleData = fruitData.filter(
+      row => row("Fruit") == "Apple"
+    )
 
-    // Filter records for apples
-    val appleData = fruitData.filter(_._2 == "Apple")
-
+    // Display the filtered Apple dataset
     println("\nApple Dataset:")
     appleData.foreach(println)
 
-    // Calculate the average price of apples
-    val applePrices = appleData.map(_._3)
-    val averagePrice = applePrices.sum / applePrices.size
-
-    println(f"\nAverage Price of Apples: Rs. $averagePrice%.2f")
-
-    // Extract apple dates and prices for the chart
-    val appleDates = appleData.map(_._1)
-    val chartPrices = appleData.map(_._3)
-
-    // Create a line chart
-    val chart = new CategoryChartBuilder()
-      .width(800)
-      .height(600)
-      .title("Apple Price Trend Over Time")
-      .xAxisTitle("Date")
-      .yAxisTitle("Price (Rs.)")
-      .build()
-
-    // Set the chart style to a line chart
-    chart.getStyler.setDefaultSeriesRenderStyle(
-      CategorySeries.CategorySeriesRenderStyle.Line
+    // Step 4: Extract the prices of Apples
+    val applePrices = appleData.map(
+      row => row("Price").toString.toDouble
     )
 
-    // Add apple price data to the chart
-    chart.addSeries(
-      "Apple Price",
-      appleDates.map(_.asInstanceOf[AnyRef]).asJava,
-      chartPrices.map(Double.box).asJava
-    )
+    // Step 5: Calculate the average price of Apples
+    val averagePrice = applePrices.sum / applePrices.length
 
-    // Display the chart
-    new org.knowm.xchart.SwingWrapper(chart).displayChart()
+    // Display the average price
+    println("\nAverage Price of Apples: " + averagePrice)
+
+    // Step 6: Prepare Apple data for chart visualization
+    val chartData = appleData.map { row =>
+      Map(
+        "Date" -> row("Date"),
+        "Price" -> row("Price").toString.toDouble
+      )
+    }
+
+    // Step 7: Create a Vegas line chart
+    val chart = Vegas("Apple Price Trend Over Time")
+      .withData(chartData)
+      .encodeX("Date", Nom)
+      .encodeY("Price", Quant)
+      .mark(Line)
+
+    // Step 8: Display the chart in a separate window
+    chart.window.show
   }
 }
